@@ -7,7 +7,8 @@ from util import load_image
 import os
 import ipdb
 
-weight_path = '../data/caffe_layers_value.pickle'
+weight_path = '../data/caffe_layers_value.pickle' #ED: pretrained VGG Network weights 
+# obtained from https://drive.google.com/file/d/0B5o40yxdA9PqOVI5dF9tN3NUc2c/view?usp=sharing
 model_path = '../models/caltech256/'
 pretrained_model_path = None #'../models/caltech256/model-0'
 n_epochs = 10000
@@ -19,11 +20,11 @@ batch_size = 60
 dataset_path = '/media/storage3/Study/data/256_ObjectCategories'
 
 caltech_path = '../data/caltech'
-trainset_path = '../data/caltech/train.pickle'
-testset_path = '../data/caltech/test.pickle'
-label_dict_path = '../data/caltech/label_dict.pickle'
+trainset_path = caltech_path + '/train.pickle'
+testset_path = caltech_path + '/test.pickle'
+label_dict_path = caltech_path + '/label_dict.pickle'
 
-if not os.path.exists( trainset_path ):
+if not os.path.exists( trainset_path ): # ED: first run with caltech, prepare & format the data
     if not os.path.exists( caltech_path ):
         os.makedirs( caltech_path )
     image_dir_list = os.listdir( dataset_path )
@@ -54,16 +55,18 @@ if not os.path.exists( trainset_path ):
     label_dict.to_pickle(label_dict_path)
     trainset.to_pickle(trainset_path)
     testset.to_pickle(testset_path)
-else:
+else: # ED: just reload the pickle files (not the first run)
     trainset = pd.read_pickle( trainset_path )
     testset  = pd.read_pickle( testset_path )
     label_dict = pd.read_pickle( label_dict_path )
     n_labels = len(label_dict)
 
+# some placeholders
 learning_rate = tf.placeholder( tf.float32, [])
 images_tf = tf.placeholder( tf.float32, [None, 224, 224, 3], name="images")
 labels_tf = tf.placeholder( tf.int64, [None], name='labels')
 
+# creates a detector
 detector = Detector(weight_path, n_labels)
 
 p1,p2,p3,p4,conv5, conv6, gap, output = detector.inference(images_tf)

@@ -22,6 +22,7 @@ class Detector():
         f = self.get_weight( name )
         return f.transpose(( 2,3,1,0 ))
 
+    # ED: creates a conv layer with conv2d + bias + RELU with pretrained weights&bias
     def conv_layer( self, bottom, name ):
         with tf.variable_scope(name) as scope:
 
@@ -110,6 +111,8 @@ class Detector():
 
     def inference( self, rgb, train=False ):
         rgb *= 255.
+
+        # ED: convert to BGR
         r, g, b = tf.split(3, 3, rgb)
         bgr = tf.concat(3,
             [
@@ -118,36 +121,47 @@ class Detector():
                 r-self.image_mean[2]
             ])
 
-        relu1_1 = self.conv_layer( bgr, "conv1_1" )
-        relu1_2 = self.conv_layer( relu1_1, "conv1_2" )
-
+        # ED: 2xCONV (conv2d + bias + RELU with pretrained weights&bias)
+        relu1_1 = self.conv_layer( bgr, "conv1_1" )  
+        relu1_2 = self.conv_layer( relu1_1, "conv1_2" ) 
+        # ED: MAXPOOL
         pool1 = tf.nn.max_pool(relu1_2, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1],
                                          padding='SAME', name='pool1')
 
+        # ED: 2xCONV (conv2d + bias + RELU with pretrained weights&bias)
         relu2_1 = self.conv_layer(pool1, "conv2_1")
         relu2_2 = self.conv_layer(relu2_1, "conv2_2")
+        # ED: MAXPOOL
         pool2 = tf.nn.max_pool(relu2_2, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1],
                                padding='SAME', name='pool2')
 
+        # ED: 3xCONV (conv2d + bias + RELU with pretrained weights&bias)
         relu3_1 = self.conv_layer( pool2, "conv3_1")
         relu3_2 = self.conv_layer( relu3_1, "conv3_2")
         relu3_3 = self.conv_layer( relu3_2, "conv3_3")
+        # ED: MAXPOOL
         pool3 = tf.nn.max_pool(relu3_3, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1],
                                padding='SAME', name='pool3')
 
+        # ED: 3xCONV (conv2d + bias + RELU with pretrained weights&bias)
         relu4_1 = self.conv_layer( pool3, "conv4_1")
         relu4_2 = self.conv_layer( relu4_1, "conv4_2")
         relu4_3 = self.conv_layer( relu4_2, "conv4_3")
+        # ED: MAXPOOL
         pool4 = tf.nn.max_pool(relu4_3, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1],
                                padding='SAME', name='pool4')
 
+        # ED: 3xCONV (conv2d + bias + RELU with pretrained weights&bias)
         relu5_1 = self.conv_layer( pool4, "conv5_1")
         relu5_2 = self.conv_layer( relu5_1, "conv5_2")
         relu5_3 = self.conv_layer( relu5_2, "conv5_3")
 
+        # ED: 1xCONV (conv2d + bias + RELU with UNTRAINED weights&bias)
         conv6 = self.new_conv_layer( relu5_3, [3,3,512,1024], "conv6")
+        # ED: Global Average Pooling
         gap = tf.reduce_mean( conv6, [1,2] )
 
+        # ED: final weights to multiply with ClassActivationMaps (CAM)
         with tf.variable_scope("GAP"):
             gap_w = tf.get_variable(
                     "W",
