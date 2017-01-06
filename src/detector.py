@@ -1,14 +1,14 @@
 import tensorflow as tf
 import numpy as np
-import cPickle
-import ipdb
-class Detector():
+import pickle as pkl
+# import ipdb 
+class Detector(object):
     def __init__(self, weight_file_path, n_labels):
         self.image_mean = [103.939, 116.779, 123.68]
         self.n_labels = n_labels
 
         with open(weight_file_path) as f:
-            self.pretrained_weights = cPickle.load(f)
+            self.pretrained_weights = pkl.load(f)
 
     def get_weight( self, layer_name):
         layer = self.pretrained_weights[layer_name]
@@ -170,7 +170,8 @@ class Detector():
 
         output = tf.matmul( gap, gap_w)
 
-        return pool1, pool2, pool3, pool4, relu5_3, conv6, gap, output
+        return pool1, pool2, pool3, pool4, relu5_3, conv6, gap, output # returns layers with pretrained weights 
+        # + Untrained Conv (conv6), + GAP + final untrained weights
 
     def get_classmap(self, label, conv6):
         conv6_resized = tf.image.resize_bilinear( conv6, [224, 224] )

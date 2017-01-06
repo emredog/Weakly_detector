@@ -17,7 +17,7 @@ weight_decay_rate = 0.0005
 momentum = 0.9
 batch_size = 60
 
-dataset_path = '/media/storage3/Study/data/256_ObjectCategories'
+dataset_path = '/media/emredog/research-data/caltech256/256_ObjectCategories'
 
 caltech_path = '../data/caltech'
 trainset_path = caltech_path + '/train.pickle'
@@ -69,17 +69,17 @@ labels_tf = tf.placeholder( tf.int64, [None], name='labels')
 # creates a detector
 detector = Detector(weight_path, n_labels)
 
-p1,p2,p3,p4,conv5, conv6, gap, output = detector.inference(images_tf)
+p1,p2,p3,p4,conv5, conv6, gap, output = detector.inference(images_tf) # ED: pretrained before conv6
 loss_tf = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits( output, labels_tf ))
 
-weights_only = filter( lambda x: x.name.endswith('W:0'), tf.trainable_variables() )
+weights_only = filter( lambda x: x.name.endswith('W:0'), tf.trainable_variables() ) # ED: weights of gap_w layer?
 weight_decay = tf.reduce_sum(tf.pack([tf.nn.l2_loss(x) for x in weights_only])) * weight_decay_rate
 loss_tf += weight_decay
 
 sess = tf.InteractiveSession()
 saver = tf.train.Saver( max_to_keep=50 )
 
-optimizer = tf.train.MomentumOptimizer( learning_rate, momentum )
+optimizer = tf.train.MomentumOptimizer( learning_rate, momentum ) # ED: SGD momentum optimizer
 grads_and_vars = optimizer.compute_gradients( loss_tf )
 grads_and_vars = map(lambda gv: (gv[0], gv[1]) if ('conv6' in gv[1].name or 'GAP' in gv[1].name) else (gv[0]*0.1, gv[1]), grads_and_vars)
 #grads_and_vars = [(tf.clip_by_value(gv[0], -5., 5.), gv[1]) for gv in grads_and_vars]
@@ -87,7 +87,7 @@ train_op = optimizer.apply_gradients( grads_and_vars )
 tf.initialize_all_variables().run()
 
 if pretrained_model_path:
-    print "Pretrained"
+    print("Pretrained")
     saver.restore(sess, pretrained_model_path)
 
 testset.index  = range( len(testset) )
@@ -98,7 +98,7 @@ testset.index  = range( len(testset) )
 #trainset = pd.concat( [trainset, trainset2] )
 # We lack the number of training set. Let's use some of the test images
 
-f_log = open('../results/log.caltech256.txt', 'w')
+f_log = open('../results/log.caltech256-emre.txt', 'w')
 
 iterations = 0
 loss_list = []
@@ -133,16 +133,16 @@ for epoch in range(n_epochs):
 
         iterations += 1
         if iterations % 5 == 0:
-            print "======================================"
-            print "Epoch", epoch, "Iteration", iterations
-            print "Processed", start, '/', len(trainset)
+            print("======================================")
+            print(("Epoch", epoch, "Iteration", iterations))
+            print(("Processed", start, '/', len(trainset)))
 
             label_predictions = output_val.argmax(axis=1)
             acc = (label_predictions == current_labels).sum()
 
-            print "Accuracy:", acc, '/', len(current_labels)
-            print "Training Loss:", np.mean(loss_list)
-            print "\n"
+            print("Accuracy:", acc, '/', len(current_labels))
+            print("Training Loss:", np.mean(loss_list))
+            print("\n")
             loss_list = []
 
     n_correct = 0
@@ -173,9 +173,9 @@ for epoch in range(n_epochs):
 
     acc_all = n_correct / float(n_data)
     f_log.write('epoch:'+str(epoch)+'\tacc:'+str(acc_all) + '\n')
-    print "$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$"
-    print 'epoch:'+str(epoch)+'\tacc:'+str(acc_all) + '\n'
-    print "$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$"
+    print("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
+    print('epoch:'+str(epoch)+'\tacc:'+str(acc_all) + '\n')
+    print("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
 
     saver.save( sess, os.path.join( model_path, 'model'), global_step=epoch)
 
