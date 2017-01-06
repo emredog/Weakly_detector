@@ -5,7 +5,6 @@ import pandas as pd
 from detector import Detector
 from util import load_image
 import os
-import ipdb
 
 weight_path = '../data/caffe_layers_value.pickle' #ED: pretrained VGG Network weights 
 # obtained from https://drive.google.com/file/d/0B5o40yxdA9PqOVI5dF9tN3NUc2c/view?usp=sharing
